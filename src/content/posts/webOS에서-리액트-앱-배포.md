@@ -86,7 +86,7 @@ ares-install your-app-name.ipk
 
 이 후 webOS 에뮬레이터를 확인해주면 설치가 잘 된 모습을 볼 수 있습니다.
 
-![](https://velog.velcdn.com/images/seung365/post/c2be555b-a0da-416b-bd9c-477aed812261/image.png)
+![](https://velog.velcdn.com/images/seung365/post/f2dd05fe-8a93-40da-9543-744b962d8d4f/image.png)
 
 
 

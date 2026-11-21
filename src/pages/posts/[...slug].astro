@@ -44,8 +44,10 @@ const jsonLd = {
 		: siteConfig.lang.replace("_", "-"),
 	// TODO include cover image here
 };
-// velog는 본문 첫 이미지를 썸네일로 쓴다. 본문에 이미 있으면 커버를 또 그리지 않는다 (목록 카드 썸네일은 유지)
-const showCover = !!entry.data.image && !entry.body?.includes(entry.data.image);
+// velog는 본문 첫 이미지를 썸네일로 쓴다. 본문에 이미 있거나 본문이 이미지로 시작하면
+// (같은 그림이 다른 주소로 올라간 경우) 커버를 또 그리지 않는다. 목록 카드 썸네일은 유지
+const body = entry.body ?? "";
+const showCover = !!entry.data.image && !body.includes(entry.data.image) && !/^\s*!\[/.test(body);
 ---
 <MainGridLayout banner={entry.data.image} title={entry.data.title} description={entry.data.description} lang={entry.data.lang} setOGTypeArticle={true} headings={headings}>
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
