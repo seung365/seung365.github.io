@@ -1,3 +1,9 @@
+# Third-party notices
+
+이 블로그의 테마 코드는 [Fuwari](https://github.com/saicaca/fuwari)를 기반으로 하며, 아래 MIT 라이선스를 따른다.
+블로그 글(`src/content/`)과 이미지의 저작권은 작성자(seung365)에게 있다.
+
+```
 MIT License
 
 Copyright (c) 2024 saicaca
@@ -19,3 +25,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
