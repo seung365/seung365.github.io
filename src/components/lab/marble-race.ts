@@ -137,7 +137,7 @@ export function mountMarbleRace(canvas: HTMLCanvasElement, ev: RaceEvents) {
 		// 공
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.font = `800 ${R}px Roboto, sans-serif`;
+		ctx.font = `800 ${R}px "Pretendard Variable", Pretendard, sans-serif`;
 		for (const m of marbles) {
 			if (m.finish !== null || m.y < top || m.y > bottom) continue;
 			const e = opts.entries[m.id];

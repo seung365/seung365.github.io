@@ -20,11 +20,11 @@ const sampleText = (text: string, width: number, height: number, gap: number) =>
 	const g = c.getContext("2d", { willReadFrequently: true });
 	if (!g) return [];
 	let size = Math.min(height * 0.62, (width * 1.55) / text.length);
-	g.font = `900 ${size}px Roboto, sans-serif`;
+	g.font = `900 ${size}px "Pretendard Variable", Pretendard, sans-serif`;
 	// 폭에 맞게 줄이기
 	while (g.measureText(text).width > width * 0.92 && size > 10) {
 		size -= 2;
-		g.font = `900 ${size}px Roboto, sans-serif`;
+		g.font = `900 ${size}px "Pretendard Variable", Pretendard, sans-serif`;
 	}
 	g.fillStyle = "#000";
 	g.textAlign = "center";

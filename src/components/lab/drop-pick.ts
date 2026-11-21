@@ -59,7 +59,7 @@ export function mountDropPick(
 		};
 		// 좁은 칸은 처음부터 작게 시작해 칸마다 글자 크기가 들쭉날쭉하지 않게
 		for (let size = maxW < 60 ? 11 : 14; size >= 10; size--) {
-			ctx.font = `700 ${size}px Roboto, sans-serif`;
+			ctx.font = `700 ${size}px "Pretendard Variable", Pretendard, sans-serif`;
 			if (fits(text)) return [text];
 		}
 		const words = text.split(" ");

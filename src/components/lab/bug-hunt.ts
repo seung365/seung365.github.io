@@ -399,7 +399,7 @@ export function mountBugHunt(root: HTMLElement): () => void {
 		for (const f of floaters) {
 			ctx.globalAlpha = Math.min(f.life / 0.3, 1);
 			ctx.fillStyle = f.color;
-			ctx.font = "bold 15px Roboto, sans-serif";
+			ctx.font = 'bold 15px "Pretendard Variable", Pretendard, sans-serif';
 			ctx.fillText(f.text, f.x, f.y - (0.8 - f.life) * 40);
 		}
 		ctx.textAlign = "start";
