@@ -1,6 +1,4 @@
 import { type CollectionEntry, getCollection } from "astro:content";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import { getCategoryUrl } from "@utils/url-utils.ts";
 
 // // Retrieve posts and sort them by publication date
@@ -84,11 +82,8 @@ export async function getCategoryList(): Promise<Category[]> {
 	});
 	const count: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
-		if (!post.data.category) {
-			const ucKey = i18n(I18nKey.uncategorized);
-			count[ucKey] = count[ucKey] ? count[ucKey] + 1 : 1;
-			return;
-		}
+		// 분류 없는 글은 목록에 넣지 않는다 (velog 글은 전부 분류 없음)
+		if (!post.data.category) return;
 
 		const categoryName =
 			typeof post.data.category === "string"

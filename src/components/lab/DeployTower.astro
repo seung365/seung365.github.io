@@ -1,0 +1,78 @@
+---
+---
+
+<deploy-tower class="block relative select-none">
+    <div class="flex items-center justify-between px-1 pb-3 font-mono">
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">FLOOR</span>
+            <span data-floor class="text-2xl font-bold text-90 tabular-nums">0</span>
+        </div>
+        <span data-version class="text-sm font-bold text-[var(--primary)]">v0.0</span>
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">BEST</span>
+            <span data-best class="text-2xl font-bold text-90 tabular-nums">0</span>
+        </div>
+    </div>
+
+    <div data-stage class="relative h-[26rem] md:h-[30rem] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 touch-none cursor-pointer bg-gradient-to-b from-transparent to-[var(--btn-regular-bg)]">
+        <div data-pop class="pointer-events-none absolute top-8 inset-x-0 text-center text-2xl font-black text-[var(--primary)] opacity-0"></div>
+
+        <div data-overlay class="absolute inset-0 rounded-[inherit] z-10 flex items-center justify-center bg-[color-mix(in_oklab,var(--card-bg)_80%,transparent)] backdrop-blur-sm">
+            <div data-start class="text-center px-6">
+                <div class="text-xs font-bold tracking-[0.2em] text-[var(--primary)] mb-2">DEPLOY TOWER</div>
+                <h2 class="text-3xl font-black text-90 mb-3">배포 타워</h2>
+                <ul class="text-sm text-75 mb-6 space-y-1">
+                    <li>움직이는 블록을 <b>탭 · 클릭 · 스페이스</b>로 떨어뜨려 쌓으세요</li>
+                    <li>어긋난 만큼 잘려 나가요 · 딱 맞추면 <b class="text-[var(--primary)]">PERFECT</b></li>
+                    <li>퍼펙트 3연속부터는 블록이 조금씩 다시 커져요</li>
+                </ul>
+                <button data-action="start" class="btn-regular mx-auto rounded-lg h-11 px-6 font-bold active:scale-95">배포 시작</button>
+            </div>
+
+            <div data-result hidden class="text-center px-6">
+                <div data-r-msg class="text-xs font-bold tracking-[0.15em] text-[var(--primary)] mb-2"></div>
+                <div class="flex items-center justify-center gap-2">
+                    <div class="text-5xl font-black text-90 tabular-nums"><span data-r-floor>0</span><span class="text-2xl text-50">층</span></div>
+                    <span data-r-new hidden class="text-xs font-bold text-white bg-[var(--primary)] rounded-full px-2 py-0.5 animate-bounce">NEW</span>
+                </div>
+                <div class="text-sm text-75 mt-2 mb-5">최대 퍼펙트 <b data-r-streak>0</b>연속 · 최고 <b data-r-best>0</b>층</div>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button data-action="retry" class="btn-regular rounded-lg h-11 px-5 font-bold active:scale-95">다시 배포</button>
+                    <button data-action="share" data-share class="btn-plain rounded-lg h-11 px-5 font-bold active:scale-95">결과 공유</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="text-xs text-50 mt-3 text-center"><span class="hidden md:inline">스페이스·Enter로 시작/드롭 · </span>기록은 이 브라우저에만 저장돼요</p>
+</deploy-tower>
+
+<style is:global>
+    @keyframes tower-pop {
+        0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+        20% { opacity: 1; transform: translateY(0) scale(1.08); }
+        70% { opacity: 1; transform: translateY(-4px) scale(1); }
+        100% { opacity: 0; transform: translateY(-14px) scale(1); }
+    }
+    .tower-pop { animation: tower-pop 0.9s ease-out forwards; }
+</style>
+
+<script>
+	// three 는 이 페이지에서만, 엘리먼트가 붙을 때 불러온다
+	class DeployTowerElement extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+		async connectedCallback() {
+			const { mountDeployTower } = await import("./deploy-tower");
+			if (!this.isConnected || this.#cleanup) return;
+			try {
+				this.#cleanup = mountDeployTower(this);
+			} catch {
+				this.querySelector("[data-start] button")?.replaceWith("이 브라우저는 WebGL을 지원하지 않아요");
+			}
+		}
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+	if (!customElements.get("deploy-tower")) customElements.define("deploy-tower", DeployTowerElement);
+</script>

@@ -1,25 +1,138 @@
 ---
-
-import { getEntry, render } from "astro:content";
-import Markdown from "@components/misc/Markdown.astro";
+import { Icon } from "astro-icon/components";
+import ThreeHero from "../components/three/ThreeHero.astro";
+import { profileConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 
-const aboutPost = await getEntry("spec", "about");
+// 이력 데이터. highlights(성과 불릿)·stack 을 채우면 그대로 렌더된다.
+type Experience = {
+	period: string;
+	company: string;
+	role: string;
+	summary?: string;
+	highlights?: string[];
+	stack?: string;
+};
+const experiences: Experience[] = [
+	{
+		period: "2026.02 ~ 현재",
+		company: "카카오헬스케어",
+		role: "Front-End Engineer",
+		summary: "혈당·건강 관리 서비스 PASTA의 웹·웹뷰 프론트엔드 개발",
+	},
+	{ period: "2025.07 ~ 2026.01", company: "티빙 (TVING)", role: "Web Service Development" },
+	{ period: "2025.03 ~ 2025.06", company: "(주)셈웨어", role: "ICT 인턴십 (Front-End)" },
+];
 
-if (!aboutPost) {
-	throw new Error("About page content not found");
-}
+const awards = [
+	{ year: "2025", title: "엘리스 포트폴리오 트랙 프로젝트", result: "대상" },
+	{ year: "2023", title: "Hackers Ground", result: "우수상 (MS 사장상)" },
+	{ year: "2023", title: "대한민국 SW융합 해커톤", result: "본선 진출" },
+];
 
-const { Content } = await render(aboutPost);
+const activities = [
+	{ period: "2025.05 ~ 2025.08", title: "IT 연합동아리 YAPP 26기", role: "Web Developer" },
+	{ period: "2025.01 ~ 2025.03", title: "엘리스 포트폴리오 트랙 FE 1기", role: "FE Course" },
+	{ period: "2024.09 ~ 2025.02", title: "Google Developer Group KNU 4기", role: "FE Member" },
+	{ period: "2024.04 ~ 2024.11", title: "카카오 테크 캠퍼스 FE 2기", role: "FE Student" },
+	{ period: "2024.01 ~ 2024.02", title: "부스트코스 데이터 사이언스", role: "코칭스터디" },
+];
+
+const sections = [
+	{ id: "experience", label: "경력" },
+	{ id: "awards", label: "수상" },
+	{ id: "activities", label: "활동" },
+];
 ---
-<MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)}>
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
-        <div class="card-base z-10 px-9 py-6 relative w-full ">
-            <Markdown class="mt-2">
-                <Content />
-            </Markdown>
+<MainGridLayout title={i18n(I18nKey.about)} description="프론트엔드 개발자 백승범의 경력과 활동">
+    <div class="card-base relative overflow-hidden onload-animation">
+        <!-- 히어로 -->
+        <header class="relative grid md:grid-cols-[1fr_minmax(0,16rem)] items-center border-b border-dashed border-black/10 dark:border-white/15">
+            <div class="relative z-10 px-8 md:px-10 pt-2 md:pt-10 pb-8 order-2 md:order-1">
+                <div class="text-xs font-bold tracking-[0.2em] text-[var(--primary)] mb-3">FRONTEND ENGINEER</div>
+                <h1 class="text-5xl md:text-6xl font-black text-90 tracking-tight mb-4">{profileConfig.name}<span class="text-[var(--primary)]">.</span></h1>
+                <p class="text-75 leading-relaxed mb-6">
+                    끊임없이 자신을 개발하는 FE 개발자입니다.<br/>
+                    트러블 슈팅을 좋아하고, 만들며 배운 것을 기록합니다.
+                </p>
+                <div class="flex flex-wrap gap-x-5 gap-y-2 font-medium">
+                    <a class="link text-[var(--primary)]" href="https://github.com/seung365" target="_blank">GitHub ↗</a>
+                    <a class="link text-[var(--primary)]" href="https://velog.io/@seung365" target="_blank">velog ↗</a>
+                </div>
+            </div>
+            <ThreeHero class="order-1 md:order-2 h-52 md:h-64 w-full" />
+        </header>
+
+        <!-- 섹션 내비 -->
+        <nav class="flex gap-1 px-6 md:px-8 py-3 border-b border-dashed border-black/10 dark:border-white/15 overflow-x-auto hide-scrollbar">
+            {sections.map((s, i) => (
+                <a href={`#${s.id}`} class="btn-plain rounded-lg h-9 px-3 shrink-0 text-sm">
+                    <span class="font-mono text-[var(--primary)] mr-1.5">{String(i + 1).padStart(2, "0")}</span>{s.label}
+                </a>
+            ))}
+        </nav>
+
+        <div class="px-8 md:px-10 py-10 flex flex-col gap-14">
+            <!-- 경력 -->
+            <section id="experience" class="scroll-mt-24">
+                <div class="text-xs font-bold tracking-[0.2em] text-50 mb-2">EXPERIENCE</div>
+                <h2 class="text-2xl font-bold text-90 mb-8">경력</h2>
+                <ol class="relative border-l-2 border-[var(--line-divider)] ml-1.5 flex flex-col gap-10">
+                    {experiences.map((e, i) => (
+                        <li class="relative pl-7">
+                            <span class:list={[
+                                "absolute -left-[0.5625rem] top-1.5 w-4 h-4 rounded-full border-[3px] border-[var(--card-bg)]",
+                                i === 0 ? "bg-[var(--primary)]" : "bg-[var(--btn-regular-bg-active)]",
+                            ]}></span>
+                            <div class="font-mono text-sm text-50 mb-1">{e.period}</div>
+                            <h3 class="text-xl font-bold text-90">{e.company}</h3>
+                            <div class="text-[var(--primary)] font-medium mt-0.5">{e.role}</div>
+                            {e.summary && <p class="text-75 mt-2">{e.summary}</p>}
+                            {e.highlights && e.highlights.length > 0 && (
+                                <ul class="mt-3 flex flex-col gap-1.5 text-75 list-disc pl-5 marker:text-[var(--primary)]">
+                                    {e.highlights.map((h) => <li>{h}</li>)}
+                                </ul>
+                            )}
+                            {e.stack && <div class="mt-3 font-mono text-xs text-50">{e.stack}</div>}
+                        </li>
+                    ))}
+                </ol>
+            </section>
+
+            <!-- 수상 -->
+            <section id="awards" class="scroll-mt-24">
+                <div class="text-xs font-bold tracking-[0.2em] text-50 mb-2">AWARDS</div>
+                <h2 class="text-2xl font-bold text-90 mb-6">수상</h2>
+                <div class="grid sm:grid-cols-3 gap-3">
+                    {awards.map((a) => (
+                        <div class="rounded-xl bg-[var(--btn-regular-bg)] p-5 transition hover:-translate-y-0.5">
+                            <div class="flex items-center gap-2 text-[var(--primary)] mb-3">
+                                <Icon name="material-symbols:trophy-outline-rounded" class="text-xl"></Icon>
+                                <span class="font-mono text-sm">{a.year}</span>
+                            </div>
+                            <div class="font-bold text-90 leading-snug">{a.title}</div>
+                            <div class="text-sm text-75 mt-1">{a.result}</div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- 활동 -->
+            <section id="activities" class="scroll-mt-24">
+                <div class="text-xs font-bold tracking-[0.2em] text-50 mb-2">BEYOND WORK</div>
+                <h2 class="text-2xl font-bold text-90 mb-6">활동</h2>
+                <ul class="flex flex-col">
+                    {activities.map((a) => (
+                        <li class="flex flex-col sm:flex-row sm:items-baseline gap-x-6 gap-y-0.5 py-3.5 border-b border-dashed border-black/10 dark:border-white/15 last:border-none">
+                            <span class="font-mono text-sm text-50 sm:w-44 shrink-0">{a.period}</span>
+                            <span class="font-bold text-90">{a.title}</span>
+                            <span class="text-sm text-75 sm:ml-auto">{a.role}</span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
         </div>
     </div>
 </MainGridLayout>

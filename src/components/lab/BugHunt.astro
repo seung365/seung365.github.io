@@ -1,0 +1,74 @@
+---
+---
+
+<bug-hunt class="block relative select-none">
+    <!-- HUD -->
+    <div class="flex items-center justify-between px-1 pb-3 font-mono">
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">SCORE</span>
+            <span data-score class="text-2xl font-bold text-90 tabular-nums">0</span>
+        </div>
+        <span data-combo class="text-sm font-bold text-[var(--primary)]"></span>
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">TIME</span>
+            <span data-time class="text-2xl font-bold text-90 tabular-nums w-14 text-right">30.0</span>
+        </div>
+    </div>
+
+    <div class="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/10">
+        <canvas class="block w-full h-[22rem] md:h-[26rem] touch-none cursor-crosshair"></canvas>
+
+        <!-- 시작/결과 패널 -->
+        <div data-overlay class="absolute inset-0 rounded-[inherit] flex items-center justify-center bg-[color-mix(in_oklab,var(--card-bg)_82%,transparent)] backdrop-blur-sm">
+            <div data-start class="text-center px-6">
+                <div class="text-xs font-bold tracking-[0.2em] text-[var(--primary)] mb-2">BUG HUNT</div>
+                <h2 class="text-3xl font-black text-90 mb-3">버그 잡기</h2>
+                <ul class="text-sm text-75 mb-6 space-y-1">
+                    <li>30초 안에 기어다니는 <b class="text-[var(--primary)]">버그</b>를 최대한 많이 잡으세요</li>
+                    <li><b class="text-red-500">빨간 크리티컬</b>은 빠르지만 30점 · <b class="text-amber-500">핫픽스</b>는 +3초</li>
+                    <li><b class="text-emerald-500">초록 체크(기능)</b>는 잡으면 감점! · 연속으로 잡으면 콤보 배율</li>
+                </ul>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button data-action="daily" class="btn-regular rounded-lg h-11 px-5 font-bold active:scale-95">오늘의 챌린지</button>
+                    <button data-action="practice" class="btn-plain rounded-lg h-11 px-5 font-bold active:scale-95">연습 모드</button>
+                </div>
+                <p class="text-xs text-50 mt-4">
+                    오늘의 챌린지는 모두에게 같은 판이 나와요 · 최고 <span data-best-daily class="font-mono">0</span>
+                    · 연습 최고 <span data-best-practice class="font-mono">0</span>
+                </p>
+            </div>
+
+            <div data-result hidden class="text-center px-6">
+                <div data-r-title class="text-xs font-bold tracking-[0.15em] text-[var(--primary)] mb-2"></div>
+                <div class="flex items-center justify-center gap-2">
+                    <div data-r-score class="text-5xl font-black text-90 tabular-nums">0</div>
+                    <span data-r-new hidden class="text-xs font-bold text-white bg-[var(--primary)] rounded-full px-2 py-0.5 animate-bounce">NEW</span>
+                </div>
+                <div class="text-sm text-75 mt-2">검거 <b data-r-caught>0</b> · 최대 콤보 <b data-r-combo>0</b> · 최고 <b data-r-best class="font-mono">0</b></div>
+                <div data-r-bar class="text-2xl tracking-widest my-4" aria-label="5초 구간별 검거율"></div>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button data-action="retry" class="btn-regular rounded-lg h-11 px-5 font-bold active:scale-95">다시 하기</button>
+                    <button data-action="share" data-share class="btn-plain rounded-lg h-11 px-5 font-bold active:scale-95">결과 공유</button>
+                    <button data-action="menu" class="btn-plain rounded-lg h-11 px-4 active:scale-95">모드 선택</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="text-xs text-50 mt-3 text-center"><span class="hidden md:inline">Enter로 시작 · </span>기록은 이 브라우저에만 저장돼요</p>
+</bug-hunt>
+
+<script>
+	import { mountBugHunt } from "./bug-hunt";
+
+	class BugHuntElement extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+		connectedCallback() {
+			this.#cleanup ??= mountBugHunt(this);
+		}
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+	if (!customElements.get("bug-hunt")) customElements.define("bug-hunt", BugHuntElement);
+</script>

@@ -1,0 +1,22 @@
+---
+interface Props {
+	gameKey: string;
+	unit?: string;
+}
+const { gameKey, unit = "" } = Astro.props;
+---
+
+<lab-best data-key={gameKey} data-unit={unit} class="tabular-nums">-</lab-best>
+
+<script>
+	import { loadBest } from "./lab-utils";
+
+	// 브라우저에 저장된 최고 기록을 보여준다 (swup 전환마다 다시 읽힘)
+	class LabBest extends HTMLElement {
+		connectedCallback() {
+			const best = loadBest(this.dataset.key ?? "");
+			this.textContent = best ? `${best.toLocaleString()}${this.dataset.unit ?? ""}` : "기록 없음";
+		}
+	}
+	if (!customElements.get("lab-best")) customElements.define("lab-best", LabBest);
+</script>

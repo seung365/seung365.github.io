@@ -1,0 +1,29 @@
+---
+interface Props {
+	text: string;
+	class?: string;
+}
+const { text, class: className } = Astro.props;
+---
+
+<particle-type data-text={text} class:list={["block relative cursor-crosshair", className]} role="img" aria-label={text}></particle-type>
+
+<script>
+	class ParticleTypeElement extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+		async connectedCallback() {
+			const { mountParticleType } = await import("./particle-type");
+			if (!this.isConnected || this.#cleanup) return;
+			try {
+				this.#cleanup = mountParticleType(this, this.dataset.text ?? "");
+			} catch {
+				this.textContent = this.dataset.text ?? "";
+			}
+		}
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+	if (!customElements.get("particle-type")) customElements.define("particle-type", ParticleTypeElement);
+</script>

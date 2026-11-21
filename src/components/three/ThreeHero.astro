@@ -1,0 +1,33 @@
+---
+interface Props {
+	class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<three-hero class:list={["block relative", className]} aria-hidden="true"></three-hero>
+
+<script>
+	// 커스텀 엘리먼트라 swup 페이지 전환 때 connected/disconnected 로 시작·정리된다.
+	// three 는 이 엘리먼트가 있는 페이지에서만 불러온다.
+	class ThreeHero extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+
+		async connectedCallback() {
+			const { mount } = await import("./scene");
+			if (!this.isConnected || this.#cleanup) return;
+			try {
+				this.#cleanup = mount(this);
+			} catch {
+				// WebGL 미지원이면 장식만 빠진다
+			}
+		}
+
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+
+	if (!customElements.get("three-hero")) customElements.define("three-hero", ThreeHero);
+</script>
