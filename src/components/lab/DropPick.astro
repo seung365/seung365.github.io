@@ -1,0 +1,128 @@
+---
+const PRESETS = {
+	"개발 운세": ["배포 성공 🚀", "금요일 배포 금지", "LGTM 한 번에", "머지 충돌", "버그 0개", "야근 확정", "칼퇴 각", "커피 한 잔 더"],
+	"점심 메뉴": ["한식", "중식", "일식", "양식", "분식", "국밥", "샐러드", "편의점"],
+	"벌칙": ["커피 쏘기", "통과!", "노래 한 소절", "통과!", "다음 회의 서기", "통과!"],
+};
+---
+
+<drop-pick class="block select-none" data-presets={JSON.stringify(PRESETS)}>
+    <div class="flex flex-wrap items-center gap-1.5 mb-2">
+        {Object.keys(PRESETS).map((name) => (
+            <button type="button" data-preset={name} class="btn-plain rounded-lg h-8 px-3 text-sm">{name}</button>
+        ))}
+    </div>
+    <label class="block mb-3">
+        <span class="sr-only">뽑기 항목</span>
+        <input data-items class="w-full h-11 rounded-lg px-3 bg-[var(--btn-regular-bg)] text-90 text-sm outline-none border border-transparent focus:border-[var(--primary)]"
+               placeholder="항목을 쉼표로 구분해서 입력 (2~8개)" />
+    </label>
+
+    <div class="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-gradient-to-b from-transparent to-[var(--btn-regular-bg)]">
+        <canvas class="block w-full h-[26rem] md:h-[30rem] touch-none cursor-pointer"></canvas>
+        <div data-banner class="pointer-events-none absolute top-3 inset-x-0 text-center text-xs text-50">위쪽을 누르면 그 자리에서 떨어져요</div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+        <div class="min-w-0">
+            <div class="text-xs text-50">결과</div>
+            <div data-result class="text-2xl font-black text-90 truncate">-</div>
+        </div>
+        <div class="flex gap-2">
+            <button data-share hidden class="btn-plain rounded-lg h-11 px-4 font-bold active:scale-95">공유</button>
+            <button data-drop class="btn-regular rounded-lg h-11 px-5 font-bold active:scale-95">공 떨어뜨리기</button>
+        </div>
+    </div>
+    <ol data-log class="flex flex-wrap gap-1.5 mt-3 text-xs" aria-label="최근 결과"></ol>
+    <p data-error hidden class="text-sm text-red-500 mt-2"></p>
+</drop-pick>
+
+<script>
+	import { mountDropPick } from "./drop-pick";
+	import { loadBest, saveBest, SITE_URL, shareResult } from "./lab-utils";
+
+	const ITEMS_KEY = "lab:drop-pick:items";
+
+	class DropPickElement extends HTMLElement {
+		#game: ReturnType<typeof mountDropPick> | null = null;
+		#items: string[] = [];
+		#last = "";
+
+		#$<T extends HTMLElement>(sel: string) {
+			return this.querySelector(sel) as T;
+		}
+
+		connectedCallback() {
+			if (this.#game) return;
+			const presets = JSON.parse(this.dataset.presets ?? "{}") as Record<string, string[]>;
+			const input = this.#$<HTMLInputElement>("[data-items]");
+			this.#game = mountDropPick(this.querySelector("canvas") as HTMLCanvasElement, (slot) => this.#land(slot));
+
+			let saved = "";
+			try {
+				saved = localStorage.getItem(ITEMS_KEY) ?? "";
+			} catch {}
+			input.value = saved || presets["개발 운세"].join(", ");
+			this.#apply();
+
+			input.addEventListener("change", () => this.#apply(true));
+			this.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((btn) =>
+				btn.addEventListener("click", () => {
+					input.value = presets[btn.dataset.preset ?? ""].join(", ");
+					this.#apply(true);
+				}),
+			);
+			this.#$("[data-drop]").addEventListener("click", () => {
+				this.#apply();
+				this.#game?.drop();
+			});
+			this.#$("[data-share]").addEventListener("click", () => this.#share());
+		}
+
+		disconnectedCallback() {
+			this.#game?.destroy();
+			this.#game = null;
+		}
+
+		#apply(save = false) {
+			const input = this.#$<HTMLInputElement>("[data-items]");
+			const items = input.value.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+			const error = this.#$("[data-error]");
+			const ok = items.length >= 2 && items.length <= 8;
+			error.hidden = ok;
+			error.textContent = items.length < 2 ? "항목을 2개 이상 입력해 주세요" : "항목은 8개까지 넣을 수 있어요";
+			this.#$<HTMLButtonElement>("[data-drop]").disabled = !ok;
+			if (!ok || items.join("\n") === this.#items.join("\n")) return;
+			this.#items = items;
+			this.#game?.setItems(items);
+			if (save) {
+				try {
+					localStorage.setItem(ITEMS_KEY, input.value);
+				} catch {}
+			}
+		}
+
+		#land(slot: number) {
+			const item = this.#items[slot] ?? "";
+			this.#last = item;
+			this.#$("[data-result]").textContent = `🎯 ${item}`;
+			this.#$("[data-share]").hidden = false;
+			saveBest("drop-pick", loadBest("drop-pick") + 1);
+			const li = document.createElement("li");
+			li.className = "rounded-md px-2 py-1 bg-[var(--btn-regular-bg)] text-[var(--btn-content)]";
+			li.textContent = item;
+			const log = this.#$("[data-log]");
+			log.prepend(li);
+			while (log.children.length > 10) log.lastElementChild?.remove();
+		}
+
+		async #share() {
+			const text = [`🎯 공 뽑기 결과: ${this.#last}`, `(${this.#items.join(" · ")} 중에서)`, `${SITE_URL}/lab/drop-pick/`].join("\n");
+			const res = await shareResult(text);
+			const btn = this.#$("[data-share]");
+			btn.textContent = res === "copied" ? "복사했어요!" : res === "shared" ? "공유했어요" : "공유 실패";
+			setTimeout(() => (btn.textContent = "공유"), 1600);
+		}
+	}
+	if (!customElements.get("drop-pick")) customElements.define("drop-pick", DropPickElement);
+</script>

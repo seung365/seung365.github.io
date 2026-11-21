@@ -2,20 +2,23 @@
 interface Props {
 	gameKey: string;
 	unit?: string;
+	/** 낮을수록 좋은 기록 (오차 등) */
+	low?: boolean;
 }
-const { gameKey, unit = "" } = Astro.props;
+const { gameKey, unit = "", low = false } = Astro.props;
 ---
 
-<lab-best data-key={gameKey} data-unit={unit} class="tabular-nums">-</lab-best>
+<lab-best data-key={gameKey} data-unit={unit} data-low={low ? "" : undefined} class="tabular-nums">-</lab-best>
 
 <script>
-	import { loadBest } from "./lab-utils";
+	import { loadBest, loadBestLow } from "./lab-utils";
 
 	// 브라우저에 저장된 최고 기록을 보여준다 (swup 전환마다 다시 읽힘)
 	class LabBest extends HTMLElement {
 		connectedCallback() {
-			const best = loadBest(this.dataset.key ?? "");
-			this.textContent = best ? `${best.toLocaleString()}${this.dataset.unit ?? ""}` : "기록 없음";
+			const key = this.dataset.key ?? "";
+			const best = this.dataset.low !== undefined ? loadBestLow(key) : loadBest(key) || null;
+			this.textContent = best === null ? "기록 없음" : `${best.toLocaleString()}${this.dataset.unit ?? ""}`;
 		}
 	}
 	if (!customElements.get("lab-best")) customElements.define("lab-best", LabBest);

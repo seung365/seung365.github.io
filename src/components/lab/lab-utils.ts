@@ -22,6 +22,27 @@ export const saveBest = (key: string, score: number): boolean => {
 	return true;
 };
 
+/** 낮을수록 좋은 기록 (오차 ms 등). 0도 유효한 기록이라 없으면 null */
+export const loadBestLow = (key: string): number | null => {
+	try {
+		const v = localStorage.getItem(KEY_PREFIX + key);
+		return v === null ? null : Number(v);
+	} catch {
+		return null;
+	}
+};
+
+export const saveBestLow = (key: string, value: number): boolean => {
+	const best = loadBestLow(key);
+	if (best !== null && value >= best) return false;
+	try {
+		localStorage.setItem(KEY_PREFIX + key, String(value));
+	} catch {
+		// 저장 실패는 무시
+	}
+	return true;
+};
+
 /** 모바일은 공유 시트, 그 외는 클립보드 */
 export const shareResult = async (text: string): Promise<"shared" | "copied" | "failed"> => {
 	try {

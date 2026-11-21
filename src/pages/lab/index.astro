@@ -2,31 +2,32 @@
 import { Icon } from "astro-icon/components";
 import LabBest from "../../components/lab/LabBest.astro";
 import ParticleType from "../../components/lab/ParticleType.astro";
+import { LAB_GAMES } from "../../components/lab/games";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import { url } from "../../utils/url-utils";
 
-const games = [
-	{
-		href: "/lab/bug-hunt/",
-		kicker: "ARCADE · 30초",
-		title: "버그 잡기",
-		desc: "에디터 위를 기어다니는 버그를 잡아라. 크리티컬은 빠르고, 초록 체크는 기능이니 건드리지 말 것.",
-		tags: ["오늘의 챌린지", "콤보", "Canvas 2D"],
-		icon: "material-symbols:bug-report-rounded",
-		best: { key: "bug-hunt", unit: "점" },
+const games = LAB_GAMES;
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@type": "CollectionPage",
+	name: "놀이터",
+	description: "설치 없이 바로 하는 웹 미니게임 모음",
+	url: new URL("/lab/", Astro.site).href,
+	inLanguage: "ko-KR",
+	mainEntity: {
+		"@type": "ItemList",
+		itemListElement: games.map((g, i) => ({
+			"@type": "ListItem",
+			position: i + 1,
+			name: g.title,
+			url: new URL(`/lab/${g.slug}/`, Astro.site).href,
+		})),
 	},
-	{
-		href: "/lab/deploy-tower/",
-		kicker: "3D · 원터치",
-		title: "배포 타워",
-		desc: "움직이는 블록을 타이밍 맞춰 떨어뜨려 쌓아 올리기. 어긋난 만큼 잘려 나간다. 몇 층까지 배포할 수 있을까?",
-		tags: ["Three.js", "퍼펙트 연속", "모바일 OK"],
-		icon: "material-symbols:stacks-rounded",
-		best: { key: "deploy-tower", unit: "층" },
-	},
-];
+};
+
 ---
-<MainGridLayout title="놀이터" description="Three.js 실험과 미니게임을 모아둔 놀이터">
+<MainGridLayout title="놀이터 - 설치 없이 바로 하는 웹 미니게임" description="버그 잡기, 3D 블록 쌓기, 1초 맞추기, 공 뽑기까지. 브라우저와 모바일에서 바로 하는 무료 웹 미니게임 모음." banner="/og/lab.png">
+    <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
     <section class="card-base overflow-hidden mb-4 onload-animation">
         <ParticleType text="PLAYGROUND" class="h-40 md:h-56 w-full" />
         <div class="px-8 md:px-10 pb-8 -mt-2">
@@ -40,15 +41,15 @@ const games = [
 
     <div class="grid md:grid-cols-2 gap-4">
         {games.map((g, i) => (
-            <a href={url(g.href)} class="card-base group relative flex flex-col p-7 transition hover:-translate-y-1 onload-animation"
+            <a href={url(`/lab/${g.slug}/`)} class="card-base group relative flex flex-col p-7 transition hover:-translate-y-1 onload-animation"
                style={`animation-delay: calc(var(--content-delay) + ${(i + 1) * 80}ms)`}>
                 <div class="flex items-start justify-between mb-5">
                     <div class="w-14 h-14 rounded-2xl bg-[var(--btn-regular-bg)] text-[var(--primary)] flex items-center justify-center transition group-hover:scale-110 group-hover:-rotate-6">
                         <Icon name={g.icon} class="text-3xl"></Icon>
                     </div>
                     <div class="text-right">
-                        <div class="text-[0.65rem] font-bold tracking-[0.15em] text-50">MY BEST</div>
-                        <div class="text-sm font-bold text-90"><LabBest gameKey={g.best.key} unit={g.best.unit} /></div>
+                        <div class="text-[0.65rem] font-bold tracking-[0.15em] text-50">{g.best.label ?? "MY BEST"}</div>
+                        <div class="text-sm font-bold text-90"><LabBest gameKey={g.best.key} unit={g.best.unit} low={g.best.low} /></div>
                     </div>
                 </div>
                 <div class="text-xs font-bold tracking-[0.15em] text-[var(--primary)] mb-1">{g.kicker}</div>

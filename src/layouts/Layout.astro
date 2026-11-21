@@ -45,6 +45,10 @@ if (!banner || typeof banner !== "string" || banner.trim() === "") {
 	banner = siteConfig.banner.src;
 }
 
+// 공유 미리보기 이미지: 페이지가 넘긴 banner(글 썸네일·게임 캡처), 없으면 기본 이미지
+const ogImage = new URL(banner && banner !== siteConfig.banner.src ? banner : "/og/default.png", Astro.site).href;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+
 // TODO don't use post cover as banner for now
 banner = siteConfig.banner.src;
 
@@ -91,6 +95,9 @@ const bannerOffset =
 		<meta property="og:url" content={Astro.url}>
 		<meta property="og:title" content={pageTitle}>
 		<meta property="og:description" content={description || pageTitle}>
+		<meta property="og:image" content={ogImage}>
+		<meta property="og:locale" content="ko_KR">
+		<link rel="canonical" href={canonical}>
 		{setOGTypeArticle ? (
         <meta property="og:type" content="article" />
         ) : (
@@ -101,6 +108,7 @@ const bannerOffset =
 		<meta property="twitter:url" content={Astro.url}>
 		<meta name="twitter:title" content={pageTitle}>
 		<meta name="twitter:description" content={description || pageTitle}>
+		<meta name="twitter:image" content={ogImage}>
 
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />

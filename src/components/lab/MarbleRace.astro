@@ -1,0 +1,235 @@
+---
+---
+
+<marble-race class="block select-none">
+    <label class="block">
+        <span class="text-sm font-bold text-90">참가자</span>
+        <textarea data-names rows="2" spellcheck="false"
+                  class="mt-1.5 w-full rounded-lg px-3 py-2.5 bg-[var(--btn-regular-bg)] text-90 text-sm outline-none border border-transparent focus:border-[var(--primary)] resize-y"></textarea>
+    </label>
+    <p class="text-xs text-50 mt-1">쉼표나 줄바꿈으로 구분 · <code>이름*3</code>이면 공 3개 · 최대 100개 · <b data-count class="text-75">0</b>개</p>
+
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3">
+        <div class="flex items-center gap-2" role="group" aria-label="당첨 기준">
+            <span class="text-sm text-75">당첨</span>
+            <div class="flex rounded-lg bg-[var(--btn-regular-bg)] p-0.5">
+                <button type="button" data-winby="first" aria-pressed="true" class="race-seg">먼저 도착</button>
+                <button type="button" data-winby="last" aria-pressed="false" class="race-seg">마지막 도착</button>
+            </div>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-75">
+            당첨 인원
+            <input data-winners type="number" min="1" value="1" class="w-16 h-8 rounded-lg px-2 bg-[var(--btn-regular-bg)] text-90 text-center outline-none border border-transparent focus:border-[var(--primary)]" />
+            명
+        </label>
+    </div>
+
+    <div class="relative mt-4 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-gradient-to-b from-transparent to-[var(--btn-regular-bg)]">
+        <canvas class="block w-full h-[30rem] md:h-[34rem]"></canvas>
+        <div data-hud class="pointer-events-none absolute top-3 left-3 rounded-lg px-2.5 py-1 text-xs font-mono bg-[color-mix(in_oklab,var(--card-bg)_80%,transparent)] text-75" hidden></div>
+        <div data-banner hidden class="pointer-events-none absolute inset-x-6 top-1/3 text-center">
+            <div class="race-pop inline-block rounded-2xl px-6 py-4 bg-[color-mix(in_oklab,var(--card-bg)_88%,transparent)] backdrop-blur-sm shadow-xl">
+                <div class="text-xs font-bold tracking-[0.2em] text-[var(--primary)] mb-1">WINNER</div>
+                <div data-banner-names class="text-3xl font-black text-90 break-keep"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-4">
+        <div class="flex rounded-lg bg-[var(--btn-regular-bg)] p-0.5" role="group" aria-label="속도">
+            <button type="button" data-speed="1" aria-pressed="true" class="race-seg">×1</button>
+            <button type="button" data-speed="2" aria-pressed="false" class="race-seg">×2</button>
+            <button type="button" data-speed="4" aria-pressed="false" class="race-seg">×4</button>
+        </div>
+        <div class="flex gap-2">
+            <button data-share hidden class="btn-plain rounded-lg h-11 px-4 font-bold active:scale-95">결과 공유</button>
+            <button data-start class="btn-regular rounded-lg h-11 px-6 font-bold active:scale-95">출발!</button>
+        </div>
+    </div>
+    <p data-error hidden class="text-sm text-red-500 mt-2"></p>
+
+    <ol data-result hidden class="mt-5 grid gap-1.5 sm:grid-cols-2 text-sm" aria-label="도착 순위"></ol>
+    <p class="text-xs text-50 mt-4">출발 위치는 매번 무작위로 섞여요. 같은 코스를 수천 번 돌려 이름마다 1등 확률이 같은지 확인했어요.</p>
+</marble-race>
+
+<style is:global>
+    .race-seg { height: 2rem; padding: 0 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; color: var(--text-75, inherit); opacity: 0.75; transition: all 0.15s; }
+    .race-seg[aria-pressed="true"] { background: var(--card-bg); color: var(--primary); font-weight: 700; opacity: 1; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+    @keyframes race-pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+    .race-pop { animation: race-pop 0.45s ease-out; }
+</style>
+
+<script>
+	import { type Entry, mountMarbleRace } from "./marble-race";
+	import { loadBest, SITE_URL, saveBest, shareResult } from "./lab-utils";
+
+	const NAMES_KEY = "lab:marble-race:names";
+	const DEFAULT_NAMES = "기획, 디자인, 프론트, 백엔드, QA, 인프라";
+	const MAX = 100;
+
+	/** "철수*3, 영희" → 공 목록. 같은 이름은 같은 색 */
+	const parse = (text: string): Entry[] => {
+		const tokens = text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+		const names: string[] = [];
+		for (const tok of tokens) {
+			const m = tok.match(/^(.*?)\s*\*\s*(\d+)$/);
+			const name = (m ? m[1] : tok).trim().slice(0, 20);
+			const count = m ? Math.min(Number(m[2]), MAX) : 1;
+			if (name) for (let i = 0; i < count; i++) names.push(name);
+		}
+		const unique = [...new Set(names)];
+		// 황금각으로 색을 벌려 이웃한 이름끼리 비슷하지 않게
+		const color = (name: string) => `hsl(${(unique.indexOf(name) * 137.5) % 360} 70% 52%)`;
+		return names.slice(0, MAX).map((name) => ({ name, color: color(name) }));
+	};
+
+	class MarbleRaceElement extends HTMLElement {
+		#race: ReturnType<typeof mountMarbleRace> | null = null;
+		#entries: Entry[] = [];
+		#winBy: "first" | "last" = "first";
+		#winners: Entry[] = [];
+		#order: Entry[] = [];
+
+		#$<T extends HTMLElement>(sel: string) {
+			return this.querySelector(sel) as T;
+		}
+
+		connectedCallback() {
+			if (this.#race) return;
+			this.#race = mountMarbleRace(this.querySelector("canvas") as HTMLCanvasElement, {
+				onTick: ({ left, leader, t }) => {
+					const hud = this.#$("[data-hud]");
+					hud.hidden = false;
+					hud.textContent = `남은 공 ${left} · 선두 ${leader} · ${t.toFixed(1)}s`;
+				},
+				onDecided: (winners) => this.#showWinners(winners),
+				onFinish: (order) => this.#finish(order),
+			});
+
+			const names = this.#$<HTMLTextAreaElement>("[data-names]");
+			try {
+				names.value = localStorage.getItem(NAMES_KEY) || DEFAULT_NAMES;
+			} catch {
+				names.value = DEFAULT_NAMES;
+			}
+			names.addEventListener("input", () => this.#read());
+			this.#$("[data-winners]").addEventListener("input", () => this.#read());
+			this.querySelectorAll<HTMLButtonElement>("[data-winby]").forEach((b) =>
+				b.addEventListener("click", () => {
+					this.#winBy = b.dataset.winby as "first" | "last";
+					this.#press("[data-winby]", b);
+				}),
+			);
+			this.querySelectorAll<HTMLButtonElement>("[data-speed]").forEach((b) =>
+				b.addEventListener("click", () => {
+					this.#race?.setSpeed(Number(b.dataset.speed));
+					this.#press("[data-speed]", b);
+				}),
+			);
+			this.#$("[data-start]").addEventListener("click", () => this.#start());
+			this.#$("[data-share]").addEventListener("click", () => this.#share());
+			this.#read();
+		}
+
+		disconnectedCallback() {
+			this.#race?.destroy();
+			this.#race = null;
+		}
+
+		#press(sel: string, on: HTMLButtonElement) {
+			this.querySelectorAll(sel).forEach((b) => b.setAttribute("aria-pressed", String(b === on)));
+		}
+
+		/** 입력을 읽어 검증. 경주 중이 아니면 출발선 미리보기 */
+		#read(): boolean {
+			this.#entries = parse(this.#$<HTMLTextAreaElement>("[data-names]").value);
+			const n = this.#entries.length;
+			const winnersInput = this.#$<HTMLInputElement>("[data-winners]");
+			winnersInput.max = String(Math.max(1, n - 1));
+			this.#$("[data-count]").textContent = String(n);
+			const k = Number(winnersInput.value);
+			const error = n < 2 ? "참가자를 2명 이상 입력해 주세요" : !Number.isInteger(k) || k < 1 || k >= n ? `당첨 인원은 1~${n - 1}명이에요` : "";
+			const el = this.#$("[data-error]");
+			el.textContent = error;
+			el.hidden = !error;
+			this.#$<HTMLButtonElement>("[data-start]").disabled = !!error;
+			if (!error) this.#race?.preview(this.#entries);
+			return !error;
+		}
+
+		#start() {
+			if (!this.#read() || !this.#race) return;
+			try {
+				localStorage.setItem(NAMES_KEY, this.#$<HTMLTextAreaElement>("[data-names]").value);
+			} catch {}
+			this.#winners = [];
+			this.#order = [];
+			this.#$("[data-banner]").hidden = true;
+			this.#$("[data-result]").hidden = true;
+			this.#$("[data-share]").hidden = true;
+			this.#$("[data-start]").textContent = "다시 섞어서 출발";
+			this.#race.start({ entries: this.#entries, winBy: this.#winBy, winners: Number(this.#$<HTMLInputElement>("[data-winners]").value) });
+		}
+
+		#showWinners(winners: Entry[]) {
+			this.#winners = winners;
+			const names = [...new Set(winners.map((w) => w.name))];
+			this.#$("[data-banner-names]").textContent = names.join(", ");
+			const banner = this.#$("[data-banner]");
+			banner.hidden = false;
+			setTimeout(() => (banner.hidden = true), 2600);
+		}
+
+		#finish(order: Entry[]) {
+			this.#order = order;
+			saveBest("marble-race", loadBest("marble-race") + 1);
+			const k = Number(this.#$<HTMLInputElement>("[data-winners]").value);
+			// 시간 제한으로 끝나 당첨이 아직 안 나왔으면 순위로 정한다
+			if (!this.#winners.length) this.#showWinners(this.#winBy === "first" ? order.slice(0, k) : order.slice(order.length - k));
+			const winSet = new Set(this.#winBy === "first" ? order.slice(0, k).map((_, i) => i) : order.slice(order.length - k).map((_, i) => order.length - k + i));
+			const list = this.#$("[data-result]");
+			list.replaceChildren(
+				...order.map((e, i) => {
+					const li = document.createElement("li");
+					const win = winSet.has(i);
+					li.className = `flex items-center gap-2.5 rounded-lg px-3 py-2 ${win ? "bg-[var(--btn-regular-bg)] font-bold text-90" : "text-75"}`;
+					const rank = document.createElement("span");
+					rank.className = "w-6 text-right font-mono text-50";
+					rank.textContent = String(i + 1);
+					const dot = document.createElement("span");
+					dot.className = "w-3 h-3 rounded-full shrink-0";
+					dot.style.background = e.color;
+					const name = document.createElement("span");
+					name.className = "flex-1 truncate";
+					name.textContent = e.name; // 사용자 입력이라 textContent로만
+					li.append(rank, dot, name);
+					if (win) {
+						const badge = document.createElement("span");
+						badge.className = "text-xs text-[var(--primary)]";
+						badge.textContent = "🎉 당첨";
+						li.append(badge);
+					}
+					return li;
+				}),
+			);
+			list.hidden = false;
+			this.#$("[data-share]").hidden = false;
+		}
+
+		async #share() {
+			const medals = ["🥇", "🥈", "🥉"];
+			const top = this.#order.slice(0, 3).map((e, i) => `${medals[i]} ${e.name}`).join("  ");
+			const text = [
+				"🏁 공 레이스 결과",
+				`당첨(${this.#winBy === "first" ? "먼저 도착" : "마지막 도착"}): ${[...new Set(this.#winners.map((w) => w.name))].join(", ")}`,
+				top,
+				`참가 ${this.#order.length}개 · ${SITE_URL}/lab/marble-race/`,
+			].join("\n");
+			const res = await shareResult(text);
+			const btn = this.#$("[data-share]");
+			btn.textContent = res === "copied" ? "복사했어요!" : res === "shared" ? "공유했어요" : "공유 실패";
+			setTimeout(() => (btn.textContent = "결과 공유"), 1600);
+		}
+	}
+	if (!customElements.get("marble-race")) customElements.define("marble-race", MarbleRaceElement);
+</script>

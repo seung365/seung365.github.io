@@ -1,0 +1,190 @@
+---
+---
+
+<one-second class="block select-none">
+    <div class="flex items-center justify-between px-1 pb-3 font-mono">
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">TRIES</span>
+            <span data-tries class="text-2xl font-bold text-90 tabular-nums">0</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+            <span class="text-xs text-50">BEST</span>
+            <span data-best class="text-2xl font-bold text-90 tabular-nums">-</span>
+        </div>
+    </div>
+
+    <div class="relative h-[22rem] md:h-[26rem] rounded-2xl border border-black/10 dark:border-white/10 bg-gradient-to-b from-transparent to-[var(--btn-regular-bg)] flex flex-col items-center justify-center gap-6 overflow-hidden">
+        <div data-readout class="h-24 text-center">
+            <div data-time class="text-6xl md:text-7xl font-black text-90 tabular-nums font-mono">1.000</div>
+            <div data-sub class="text-sm text-50 mt-1">누르고 있다가 정확히 1초에 떼세요</div>
+        </div>
+
+        <button data-pad aria-label="누르고 있다가 1초에 떼기"
+                class="relative w-40 h-40 md:w-44 md:h-44 rounded-full touch-none outline-none focus-visible:ring-4 ring-[var(--primary)]/40">
+            <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="46" fill="none" stroke="var(--line-divider)" stroke-width="3" />
+                <circle data-ring cx="50" cy="50" r="46" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" />
+            </svg>
+            <span data-core class="absolute inset-3 rounded-full bg-[var(--primary)] text-white font-black text-lg flex items-center justify-center shadow-lg shadow-[var(--primary)]/30 transition-transform duration-150">
+                PRESS
+            </span>
+        </button>
+
+        <div class="flex gap-2 h-11">
+            <button data-share hidden class="btn-plain rounded-lg h-11 px-5 font-bold active:scale-95">결과 공유</button>
+        </div>
+    </div>
+
+    <ol data-history class="flex flex-wrap justify-center gap-1.5 mt-3 min-h-7 font-mono text-xs" aria-label="최근 기록"></ol>
+    <p class="text-xs text-50 mt-2 text-center"><span class="hidden md:inline">스페이스를 눌렀다 떼도 돼요 · </span>처음 0.3초만 링이 보여요 · 기록은 이 브라우저에만 저장돼요</p>
+</one-second>
+
+<style is:global>
+    /* 처음 0.3초만 템포를 보여주고 사라지는 링 */
+    @keyframes one-second-hint {
+        0% { stroke-dashoffset: 100; opacity: 1; }
+        30% { stroke-dashoffset: 70; opacity: 1; }
+        45% { stroke-dashoffset: 70; opacity: 0; }
+        100% { stroke-dashoffset: 70; opacity: 0; }
+    }
+    one-second.holding [data-ring] { animation: one-second-hint 1s linear forwards; }
+    one-second.holding [data-core] { transform: scale(0.92); }
+    @media (prefers-reduced-motion: reduce) {
+        one-second.holding [data-ring] { animation: none; }
+    }
+</style>
+
+<script>
+	import { loadBestLow, saveBestLow, SITE_URL, shareResult } from "./lab-utils";
+
+	const KEY = "one-second";
+	const rate = (err: number) =>
+		err <= 5 ? "인간 크로노미터" : err <= 20 ? "거의 완벽해요" : err <= 50 ? "훌륭해요" : err <= 100 ? "괜찮아요" : err <= 250 ? "조금 아쉬워요" : "시계를 다시 보세요";
+	// 공유용 정확도 막대 (5칸)
+	const bar = (err: number) => {
+		const filled = err <= 10 ? 5 : err <= 30 ? 4 : err <= 70 ? 3 : err <= 150 ? 2 : err <= 300 ? 1 : 0;
+		return "🟩".repeat(filled) + "⬜".repeat(5 - filled);
+	};
+
+	class OneSecondElement extends HTMLElement {
+		#down: number | null = null;
+		#tries = 0;
+		#last: { sec: number; err: number } | null = null;
+		#ac = new AbortController();
+
+		#$<T extends HTMLElement>(sel: string) {
+			return this.querySelector(sel) as T;
+		}
+
+		connectedCallback() {
+			const pad = this.#$<HTMLButtonElement>("[data-pad]");
+			const opts = { signal: this.#ac.signal };
+			this.#showBest();
+
+			pad.addEventListener("pointerdown", (e) => {
+				if (e.button !== 0) return;
+				pad.setPointerCapture(e.pointerId); // 손가락이 버튼 밖으로 나가도 떼는 순간까지 잰다
+				this.#press(e.timeStamp);
+			}, opts);
+			pad.addEventListener("pointerup", (e) => this.#release(e.timeStamp), opts);
+			pad.addEventListener("pointercancel", () => this.#cancel(), opts);
+			pad.addEventListener("contextmenu", (e) => e.preventDefault(), opts);
+			// 키보드: 스페이스 (버튼 기본 동작인 click은 막는다)
+			pad.addEventListener("keydown", (e) => e.key === " " && e.preventDefault(), opts);
+			document.addEventListener("keydown", (e) => {
+				if (e.key !== " " || e.repeat || this.#isTyping(e)) return;
+				e.preventDefault();
+				this.#press(e.timeStamp);
+			}, opts);
+			document.addEventListener("keyup", (e) => {
+				if (e.key !== " " || this.#isTyping(e)) return;
+				e.preventDefault();
+				this.#release(e.timeStamp);
+			}, opts);
+			this.#$("[data-share]").addEventListener("click", () => this.#share(), opts);
+		}
+
+		disconnectedCallback() {
+			this.#ac.abort();
+		}
+
+		#isTyping(e: KeyboardEvent) {
+			const t = e.target as HTMLElement;
+			return t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName);
+		}
+
+		#showBest() {
+			const best = loadBestLow(KEY);
+			this.#$("[data-best]").textContent = best === null ? "-" : `${best}ms`;
+		}
+
+		#press(ts: number) {
+			if (this.#down !== null) return;
+			this.#down = ts;
+			// 애니메이션을 처음부터 다시 돌리려고 클래스를 뗐다 붙인다
+			this.classList.remove("holding");
+			void this.offsetWidth;
+			this.classList.add("holding");
+			this.#$("[data-time]").textContent = "?.???";
+			this.#$("[data-sub]").textContent = "지금이다 싶을 때 떼세요";
+			this.#$("[data-share]").hidden = true;
+		}
+
+		#cancel() {
+			this.#down = null;
+			this.classList.remove("holding");
+			this.#$("[data-time]").textContent = "1.000";
+			this.#$("[data-sub]").textContent = "다시 눌러 주세요";
+		}
+
+		#release(ts: number) {
+			if (this.#down === null) return;
+			const ms = Math.round(ts - this.#down);
+			this.#down = null;
+			this.classList.remove("holding");
+
+			const err = Math.abs(ms - 1000);
+			const isNew = saveBestLow(KEY, err);
+			this.#tries += 1;
+			this.#last = { sec: ms / 1000, err };
+
+			const diff = ms - 1000;
+			this.#$("[data-time]").textContent = (ms / 1000).toFixed(3);
+			const sub = this.#$("[data-sub]");
+			sub.replaceChildren(`${diff >= 0 ? "+" : "−"}${Math.abs(diff)}ms · ${rate(err)}`);
+			if (isNew && this.#tries > 1) {
+				const badge = document.createElement("span");
+				badge.className = "ml-2 text-xs font-bold text-white bg-[var(--primary)] rounded-full px-2 py-0.5";
+				badge.textContent = "BEST";
+				sub.append(badge);
+			}
+			this.#$("[data-tries]").textContent = String(this.#tries);
+			this.#showBest();
+			this.#$("[data-share]").hidden = false;
+
+			const li = document.createElement("li");
+			li.className = `rounded-md px-2 py-1 ${err <= 50 ? "bg-[var(--btn-regular-bg)] text-[var(--primary)] font-bold" : "bg-black/5 dark:bg-white/5 text-50"}`;
+			li.textContent = `${(ms / 1000).toFixed(3)}s`;
+			const list = this.#$("[data-history]");
+			list.prepend(li);
+			while (list.children.length > 8) list.lastElementChild?.remove();
+		}
+
+		async #share() {
+			if (!this.#last) return;
+			const { sec, err } = this.#last;
+			const best = loadBestLow(KEY);
+			const text = [
+				`⏱️ 1초 맞추기 · ${sec.toFixed(3)}초 (오차 ${err}ms)`,
+				bar(err),
+				best !== null && best < err ? `내 최고 오차 ${best}ms` : "",
+				`${SITE_URL}/lab/one-second/`,
+			].filter(Boolean).join("\n");
+			const res = await shareResult(text);
+			const btn = this.#$("[data-share]");
+			btn.textContent = res === "copied" ? "복사했어요!" : res === "shared" ? "공유했어요" : "공유 실패";
+			setTimeout(() => (btn.textContent = "결과 공유"), 1600);
+		}
+	}
+	if (!customElements.get("one-second")) customElements.define("one-second", OneSecondElement);
+</script>
