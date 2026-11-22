@@ -140,7 +140,7 @@ const showCover = !!entry.data.image && !body.includes(entry.data.image) && !/^\
 </MainGridLayout>
 
 <script>
-	// 글 본문의 <swr-sim> 태그를 만나면 그때 시뮬레이터 코드를 불러온다 (다른 글에는 영향 없음)
+	// 글 본문의 <swr-sim>·<turbo-sim> 태그를 만나면 그때 시뮬레이터 코드를 불러온다 (다른 글에는 영향 없음)
 	class SwrSimElement extends HTMLElement {
 		#cleanup: (() => void) | null = null;
 		async connectedCallback() {
@@ -154,4 +154,18 @@ const showCover = !!entry.data.image && !body.includes(entry.data.image) && !/^\
 		}
 	}
 	if (!customElements.get("swr-sim")) customElements.define("swr-sim", SwrSimElement);
+
+	class TurboSimElement extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+		async connectedCallback() {
+			const { mountTurboSim } = await import("../../components/sim/turbo-sim");
+			if (!this.isConnected || this.#cleanup) return;
+			this.#cleanup = mountTurboSim(this);
+		}
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+	if (!customElements.get("turbo-sim")) customElements.define("turbo-sim", TurboSimElement);
 </script>

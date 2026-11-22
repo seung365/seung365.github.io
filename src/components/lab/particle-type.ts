@@ -92,7 +92,8 @@ export function mountParticleType(el: HTMLElement, text: string): () => void {
 	};
 
 	const applyTheme = () => {
-		color.setRGB(...themeColor());
+		// 재질은 만들 때 색을 복사해 두므로 재질의 색을 직접 바꾼다
+		material.color.setRGB(...themeColor());
 		material.blending = isDark() ? AdditiveBlending : NormalBlending;
 		material.opacity = isDark() ? 0.9 : 0.85;
 		material.needsUpdate = true;

@@ -325,3 +325,32 @@ html.dark {
 :root.theme-switching * {
     transition: none !important;
 }
+
+/* 지금 보고 있는 메뉴 (Navbar.astro가 aria-current를 붙인다) */
+#navbar a[aria-current="page"] {
+    color: var(--primary);
+}
+#navbar .md\:flex a[aria-current="page"] {
+    position: relative;
+}
+#navbar .md\:flex a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    width: 18px;
+    height: 3px;
+    border-radius: 9999px;
+    background: var(--primary);
+    transform: translateX(-50%);
+}
+#nav-menu-panel a[aria-current="page"] {
+    background: var(--btn-plain-bg-hover);
+}
+#nav-menu-panel a[aria-current="page"] > div {
+    color: var(--primary);
+}
+
+/* 둘 중 하나를 고르는 버튼 묶음 (공 레이스, 글 속 시뮬레이터) */
+.race-seg { height: 2rem; padding: 0 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; color: var(--text-75, inherit); opacity: 0.75; transition: all 0.15s; }
+.race-seg[aria-pressed="true"] { background: var(--card-bg); color: var(--primary); font-weight: 700; opacity: 1; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }

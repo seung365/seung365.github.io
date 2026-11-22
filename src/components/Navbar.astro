@@ -34,6 +34,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
         <div class="hidden md:flex">
             {links.map((l) => {
                 return <a aria-label={l.name} href={l.external ? l.url : url(l.url)} target={l.external ? "_blank" : null}
+                          data-nav-link={l.external ? undefined : url(l.url)}
                           class="btn-plain scale-animation rounded-lg h-11 font-bold px-5 active:scale-95"
                 >
                     <div class="flex items-center">
@@ -139,3 +140,24 @@ if (document.readyState === 'loading') {
     loadPagefind();
 }
 </script>}
+
+<script>
+	// 지금 보고 있는 메뉴 표시. 페이지를 옮겨도 상단 메뉴는 그대로라(swup) 이동할 때마다 다시 맞춘다
+	const isActive = (link: string, path: string) =>
+		link === "/"
+			? path === "/" || /^\/\d+\/?$/.test(path) || path.startsWith("/posts/") // 홈: 글 목록 페이지와 글
+			: path.startsWith(link);
+
+	const markActiveNav = () => {
+		const path = decodeURI(location.pathname);
+		for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]")) {
+			if (isActive(a.dataset.navLink ?? "", path)) a.setAttribute("aria-current", "page");
+			else a.removeAttribute("aria-current");
+		}
+	};
+
+	markActiveNav();
+	const setup = () => window.swup.hooks.on("page:view", markActiveNav);
+	if (window.swup?.hooks) setup();
+	else document.addEventListener("swup:enable", setup);
+</script>

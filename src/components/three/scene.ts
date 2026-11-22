@@ -180,6 +180,8 @@ export function mount(el: HTMLElement): () => void {
 			m.blending = dark ? AdditiveBlending : NormalBlending;
 			m.needsUpdate = true;
 		}
+		// 셰이더는 color를 참조하지만 MeshBasicMaterial은 만들 때 복사해 두므로 따로 맞춘다
+		(core.material as MeshBasicMaterial).color.copy(color);
 		(core.material as MeshBasicMaterial).opacity = dark ? 0.22 : 0.35;
 	};
 	applyTheme();
