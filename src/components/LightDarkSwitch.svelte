@@ -31,19 +31,43 @@ onMount(() => {
 	};
 });
 
-function switchScheme(newMode: LIGHT_DARK_MODE) {
+// 테마가 실제로 바뀔 때, 누른 자리에서 새 테마가 원형으로 퍼지게 한다 (View Transitions API).
+// 지원하지 않는 브라우저나 모션 줄이기 설정이면 그냥 바로 바뀐다
+function switchScheme(newMode: LIGHT_DARK_MODE, e?: MouseEvent) {
 	mode = newMode;
-	setTheme(newMode);
+	const root = document.documentElement;
+	const willDark =
+		newMode === DARK_MODE ||
+		(newMode === AUTO_MODE && matchMedia("(prefers-color-scheme: dark)").matches);
+	const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+	if (root.classList.contains("dark") === willDark || !document.startViewTransition || reduced) {
+		setTheme(newMode);
+		return;
+	}
+	// 키보드로 누르면 좌표가 0이라 버튼 가운데에서 시작
+	const rect = (e?.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+	const x = e && e.detail > 0 ? e.clientX : rect ? rect.left + rect.width / 2 : innerWidth - 40;
+	const y = e && e.detail > 0 ? e.clientY : rect ? rect.top + rect.height / 2 : 40;
+	const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+	root.classList.add("theme-switching");
+	const vt = document.startViewTransition(() => setTheme(newMode));
+	vt.ready.then(() =>
+		root.animate(
+			{ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+			{ duration: 550, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
+		),
+	);
+	vt.finished.finally(() => root.classList.remove("theme-switching"));
 }
 
-function toggleScheme() {
+function toggleScheme(e: MouseEvent) {
 	let i = 0;
 	for (; i < seq.length; i++) {
 		if (seq[i] === mode) {
 			break;
 		}
 	}
-	switchScheme(seq[(i + 1) % seq.length]);
+	switchScheme(seq[(i + 1) % seq.length], e);
 }
 
 function showPanel() {
@@ -75,21 +99,21 @@ function hidePanel() {
         <div class="card-base float-panel p-2">
             <button class="flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95 mb-0.5"
                     class:current-theme-btn={mode === LIGHT_MODE}
-                    onclick={() => switchScheme(LIGHT_MODE)}
+                    onclick={(e) => switchScheme(LIGHT_MODE, e)}
             >
                 <Icon icon="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
                 {i18n(I18nKey.lightMode)}
             </button>
             <button class="flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95 mb-0.5"
                     class:current-theme-btn={mode === DARK_MODE}
-                    onclick={() => switchScheme(DARK_MODE)}
+                    onclick={(e) => switchScheme(DARK_MODE, e)}
             >
                 <Icon icon="material-symbols:dark-mode-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
                 {i18n(I18nKey.darkMode)}
             </button>
             <button class="flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95"
                     class:current-theme-btn={mode === AUTO_MODE}
-                    onclick={() => switchScheme(AUTO_MODE)}
+                    onclick={(e) => switchScheme(AUTO_MODE, e)}
             >
                 <Icon icon="material-symbols:radio-button-partial-outline" class="text-[1.25rem] mr-3"></Icon>
                 {i18n(I18nKey.systemMode)}

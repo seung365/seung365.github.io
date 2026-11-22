@@ -313,3 +313,15 @@ html.dark {
     margin-right: 0.35rem;
     vertical-align: middle;
 }
+
+/* 테마 전환 모션: 새 테마가 원형으로 퍼진다 (LightDarkSwitch.svelte). 기본 페이드는 끄고,
+   전환하는 동안은 색 transition도 꺼서 새 화면이 처음부터 완성된 색으로 찍히게 한다 */
+:root.theme-switching::view-transition-old(root),
+:root.theme-switching::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+:root.theme-switching,
+:root.theme-switching * {
+    transition: none !important;
+}
