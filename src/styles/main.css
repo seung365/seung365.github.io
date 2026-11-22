@@ -197,18 +197,20 @@ body {
     font-feature-settings: "ss06";
 }
 
-/* 배경: 테마 색이 은은하게 번지는 빛 + 아주 옅은 점 격자 */
-body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
+/* 배경: 테마 색이 은은하게 번지는 빛 + 아주 옅은 점 격자.
+   fixed 의사 요소 + mask로 그렸더니 카카오톡 인앱 브라우저에서 카드 사이가 하얗게 보여서
+   html 배경 레이어로 둔다 (배경색은 html의 bg-[var(--page-bg)]가 그대로 깐다) */
+html {
+    background-image:
         radial-gradient(56rem 36rem at 8% -8%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%),
         radial-gradient(48rem 32rem at 100% 4%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%),
-        radial-gradient(color-mix(in oklab, var(--primary) 14%, transparent) 1px, transparent 1px) 0 0 / 22px 22px;
-    mask-image: linear-gradient(to bottom, black, transparent 90vh);
+        radial-gradient(color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 1px);
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-size: auto, auto, 22px 22px;
+    color-scheme: light;
+}
+html.dark {
+    color-scheme: dark;
 }
 
 /* 카드: 라이트 모드에서 테두리를 살짝 줘서 배경과 또렷하게 */
