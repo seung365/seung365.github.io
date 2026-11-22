@@ -303,3 +303,13 @@ html.dark {
 @media (prefers-reduced-motion: reduce) {
     #post-list-container > *, #post-list-container img { transition: none; }
 }
+
+/* SWR 시뮬레이터 범례 점 */
+.swr-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 9999px;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+}

@@ -138,3 +138,20 @@ const showCover = !!entry.data.image && !body.includes(entry.data.image) && !/^\
     </div>
 
 </MainGridLayout>
+
+<script>
+	// 글 본문의 <swr-sim> 태그를 만나면 그때 시뮬레이터 코드를 불러온다 (다른 글에는 영향 없음)
+	class SwrSimElement extends HTMLElement {
+		#cleanup: (() => void) | null = null;
+		async connectedCallback() {
+			const { mountSwrSim } = await import("../../components/sim/swr-sim");
+			if (!this.isConnected || this.#cleanup) return;
+			this.#cleanup = mountSwrSim(this);
+		}
+		disconnectedCallback() {
+			this.#cleanup?.();
+			this.#cleanup = null;
+		}
+	}
+	if (!customElements.get("swr-sim")) customElements.define("swr-sim", SwrSimElement);
+</script>
