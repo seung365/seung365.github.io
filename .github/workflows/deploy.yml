@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # 예약 글 공개: 매일 09:07(KST)에 공개할 글이 있는지만 확인하고, 있을 때만 빌드·배포한다.
+  # GitHub cron은 UTC이고 정각은 몰려서 늦어지기 쉬워 7분으로 둔다
+  schedule:
+    - cron: "7 0 * * *"
 
 permissions:
   contents: read
@@ -11,7 +15,22 @@ permissions:
   id-token: write
 
 jobs:
+  # 정기 실행일 때만: 지난 하루 사이에 공개 날짜가 된 글이 있는지 확인
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      due: ${{ steps.due.outputs.due }}
+    steps:
+      - uses: actions/checkout@v5
+        if: github.event_name == 'schedule'
+      - id: due
+        if: github.event_name == 'schedule'
+        run: node scripts/due-posts.mjs
+
   build:
+    needs: check
+    # push·수동 실행은 항상, 정기 실행은 공개할 글이 있을 때만
+    if: github.event_name != 'schedule' || needs.check.outputs.due == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

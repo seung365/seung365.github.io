@@ -1,7 +1,7 @@
 ---
 title: "캐시가 만료된 다음에 일어나는 일: ETag와 stale-while-revalidate"
 description: "max-age가 끝난 캐시는 버려지지 않고 서버에 다시 물어요. ETag와 If-None-Match로 가볍게 묻는 법, stale-while-revalidate로 기다리지 않고 묻는 법을 실측으로 정리했어요."
-published: 2026-11-22T09:00:00.000Z
+published: 2026-11-22T06:03:45.000Z
 tags: ["Cache","HTTP 캐시","ETag","stale-while-revalidate"]
 image: "/og/post-cache-revalidate.png"
 ---
