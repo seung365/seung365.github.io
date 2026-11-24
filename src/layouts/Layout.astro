@@ -154,6 +154,10 @@ const bannerOffset =
 
 
 		<slot name="head"></slot>
+		{/* Cloudflare Web Analytics: 배포 사이트에서만. 쿠키 없음. swup 페이지 이동도 잡히게 spa 모드 */}
+		{import.meta.env.PROD && (
+			<script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7280be288cd04282a7de6cb9599dccea", "spa": true}'></script>
+		)}
 
 		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
 
