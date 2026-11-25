@@ -4,10 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # 예약 글 공개: 매일 09:07(KST)에 공개할 글이 있는지만 확인하고, 있을 때만 빌드·배포한다.
-  # GitHub cron은 UTC이고 정각은 몰려서 늦어지기 쉬워 7분으로 둔다
+  # 예약 글 공개: 6시간마다 "공개 시각이 지났는데 사이트에 아직 없는 글"이 있는지만 확인하고, 있을 때만 빌드·배포한다.
+  # GitHub 정기 실행은 몇 시간씩 밀리거나 빠지기도 해서 하루 한 번이 아니라 여러 번 본다.
+  # UTC 0·6·12·18시 7분 = 한국 시간 09:07·15:07·21:07·03:07 (정각은 몰려서 7분)
   schedule:
-    - cron: "7 0 * * *"
+    - cron: "7 */6 * * *"
 
 permissions:
   contents: read
@@ -15,7 +16,7 @@ permissions:
   id-token: write
 
 jobs:
-  # 정기 실행일 때만: 지난 하루 사이에 공개 날짜가 된 글이 있는지 확인
+  # 정기 실행일 때만: 공개됐어야 하는데 사이트에 없는 글이 있는지 확인
   check:
     runs-on: ubuntu-latest
     outputs:

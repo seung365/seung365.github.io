@@ -154,6 +154,18 @@ const bannerOffset =
 
 
 		<slot name="head"></slot>
+		{/* PWA: 홈 화면에 설치·오프라인 읽기 (public/manifest.webmanifest, public/sw.js) */}
+		<link rel="manifest" href="/manifest.webmanifest">
+		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+		<meta name="apple-mobile-web-app-title" content="seung365">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="theme-color" content="#eef1f7" media="(prefers-color-scheme: light)">
+		<meta name="theme-color" content="#16191f" media="(prefers-color-scheme: dark)">
+		{import.meta.env.PROD && (
+			<script is:inline>
+				if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+			</script>
+		)}
 		{/* Cloudflare Web Analytics: 배포 사이트에서만. 쿠키 없음. swup 페이지 이동도 잡히게 spa 모드 */}
 		{import.meta.env.PROD && (
 			<script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7280be288cd04282a7de6cb9599dccea", "spa": true}'></script>
